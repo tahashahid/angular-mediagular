@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="js/soundCloud.js"></script>
+    <!--<script src="http://www.youtube.com/apiplayer?enablejsapi=1&version=3" type="application/x-shockwave-flash"></script>-->
+
+    <script src="js/angular.js"></script>
+    <script src="js/angular-mediagular.js"></script>
+
+    <script src="js/main.js"></script>
+</head>
+<body ng-app="myApp">
+<div>
+    <ng-mediagular name="myPlayer">
+        <audio id="audioplayer" controls=""></audio>
+        <div id="youtubePlayer"></div>
+    </ng-mediagular>
+
+    <button ng-click="mediagular.myPlayer.play()">play</button>
+    <button ng-click="mediagular.myPlayer.pause()">pause</button>
+    <button ng-click="mediagular.myPlayer.toggle()">toggle</button>
+    <button ng-click="mediagular.myPlayer.stop()">stop</button>
+</div>
+</body>
+</html>
