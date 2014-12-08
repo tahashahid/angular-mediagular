@@ -1,3 +1,9 @@
+/**
+ * Created by Taha Shahid on 12/8/2014.
+ * Angular Media Component (play audio video native,soundcloud,youtube etc.)
+ * v0.0.1
+ */
+
 (function(){
     'use strict';
 
