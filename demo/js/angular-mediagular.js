@@ -23,7 +23,7 @@
                 youtubePlayer = new YT.Player('youtubePlayer', {
                     height: '390',
                     width: '640',
-                    videoId: 'kGIjetX6TBk',
+                    videoId: '',
                     playerVars: {
                         autoplay: 0,
                         controls: 0,
@@ -32,18 +32,25 @@
                     events: {
                         onReady: function(evt){
                             evt.target.playVideo();
+                            evt.target.d.style.display = 'none';
                             evt.target.d.style.pointerEvents = 'none';
                         },
-                        onStateChange: function(state){
-                            switch (state.data){
+                        onStateChange: function(evt){
+                            switch (evt.data){
+                                case -1:
+                                    $rootScope.$broadcast("mg.stop");
+                                    evt.target.d.style.display = 'none';
+                                    break;
                                 case 0:
-                                    $rootScope.$broadcast("endMedia");
+                                    $rootScope.$broadcast("mg.endMedia");
+                                    evt.target.d.style.display = 'none';
                                     break;
                                 case 1:
-                                    $rootScope.$broadcast("playing");
+                                    $rootScope.$broadcast("mg.playing");
+                                    evt.target.d.style.display = 'block';
                                     break;
                                 case 2:
-                                    $rootScope.$broadcast("paused");
+                                    $rootScope.$broadcast("mg.paused");
                                     break;
                             }
                         }
@@ -54,13 +61,14 @@
         })
         .run(function($templateCache){
             $templateCache.put("ngMediagular.html",
-                ""
+                    '<audio id="audioplayer"></audio>'
+                    + '<div id="youtubePlayer"></div>'
             )
         })
         .directive("ngMediagular", function($rootScope){
             return {
                 restrict: "AEC",
-//                templateUrl: "ngMediagular.html",
+                templateUrl: "ngMediagular.html",
                 link: function(scope, element, attr){
                     var player = $rootScope.mediagular[attr.name || "player"] = {};
                     player.currentIndex = 0;
@@ -68,17 +76,17 @@
                     var $audioPlayer = element.children("#audioplayer");
                     var audioPlayer = $audioPlayer[0];
 
-                    player.scAPI = "9ef64d670479529e01751d02e66662bc";
+                    player.scAPI = attr.scapi;
                     player.playlist = [
-
-                        {
-                            src: "qUJYqhKZrwA",
-                            provider: "youtube"
-                        },
                         {
                             src: "https://api.soundcloud.com/tracks/56542489/stream" + '?client_id=' + player.scAPI,
                             provider: "soundcloud"
                         },
+                        {
+                            src: "qUJYqhKZrwA",
+                            provider: "youtube"
+                        },
+
                         {
                             src: "qUJYqhKZrwA",
                             provider: "youtube"
@@ -91,7 +99,7 @@
                     ];
 
                     $audioPlayer.on("ended", function(){
-                        $rootScope.$broadcast("endMedia")
+                        $rootScope.$broadcast("mg.endMedia")
                     });
 
                     player.play = function(){
@@ -101,10 +109,10 @@
                         }else if(player.currentPlayer == "youtube"){
                             youtubePlayer.playVideo();
                         }else{
-                            $rootScope.$broadcast("noMediaToPlay");
+                            $rootScope.$broadcast("mg.noMediaToPlay");
                             return;
                         }
-                        $rootScope.$broadcast("playing", player.currentPlayer);
+                        $rootScope.$broadcast("mg.playing", player.currentPlayer);
                     };
                     player.pause = function(){
                         if(player.currentPlayer == "soundcloud"){
@@ -112,28 +120,28 @@
                         }else if(player.currentPlayer == "youtube"){
                             youtubePlayer.pauseVideo();
                         }else{
-                            $rootScope.$broadcast("noMediaToPause");
+                            $rootScope.$broadcast("mg.noMediaToPause");
                             return;
                         }
-                        $rootScope.$broadcast("paused", player.currentPlayer);
+                        $rootScope.$broadcast("mg.paused", player.currentPlayer);
                     };
                     player.toggle = function(){
                         if(player.currentPlayer == "soundcloud"){
-                            $rootScope.$broadcast("Toggle");
+                            $rootScope.$broadcast("mg.Toggle");
                             if(audioPlayer.paused){
                                 player.play()
                             }else{
                                 player.pause()
                             }
                         }else if(player.currentPlayer == "youtube"){
-                            $rootScope.$broadcast("Toggle");
+                            $rootScope.$broadcast("mg.Toggle");
                             if(youtubePlayer.getPlayerState() == 2){
                                 player.play()
                             }else{
                                 player.pause()
                             }
                         }else{
-                            $rootScope.$broadcast("noMediaToToggle");
+                            $rootScope.$broadcast("mg.noMediaToToggle");
                             return false;
                         }
 
@@ -145,10 +153,10 @@
                         }else if(player.currentPlayer == "youtube"){
                             youtubePlayer.stopVideo();
                         }else{
-                            $rootScope.$broadcast("noMediaToStop");
+                            $rootScope.$broadcast("mg.noMediaToStop");
                             return;
                         }
-                        $rootScope.$broadcast("Stop");
+                        $rootScope.$broadcast("mg.stop");
                     };
 
                     player.playSoundCloud = function(src, autoplay){
@@ -162,14 +170,34 @@
                         youtubePlayer.loadVideoById(src);
                         player.currentPlayer = "youtube";
                     };
-
-                    player.playQue = function(){
-                        var media = player.playlist[player.currentIndex];
-                        $rootScope.$broadcast("playNext", media);
+                    player.playMedia = function(mediaObj){
+                        player.stop();
+                        player.singlePlay = true;
+                        if(mediaObj.provider == "youtube"){
+                            player.playYoutube(mediaObj.src, true)
+                        }else if(mediaObj.provider == "soundcloud"){
+                            player.playSoundCloud(mediaObj.src, true)
+                        }
                     };
 
+                    player.playQue = function(){
+                        player.stop();
+                        player.singlePlay = false;
+                        var media = player.playlist[player.currentIndex];
+                        $rootScope.$broadcast("mg.playNext", media);
+                    };
 
-                    scope.$on("playNext", function(event, media){
+                    player.startQue = function(){
+                        player.currentIndex = 0;
+                        player.playQue();
+                    }
+
+                    scope.$on("mg.endMedia", function(){
+                        var playingType = player.singlePlay ? "single" : "que";
+                        scope.$broadcast("mg.end."+playingType);
+                    });
+
+                    scope.$on("mg.playNext", function(event, media){
                         if(media){
                             if(media.provider == "youtube"){
                                 player.playYoutube(media.src, true)
@@ -177,16 +205,21 @@
                                 player.playSoundCloud(media.src, true)
                             }
                         }else{
-                            $rootScope.$broadcast("Finished")
+                            $rootScope.$broadcast("mg.Finished")
                         }
                     });
-                    scope.$on("endMedia", function(event){
+
+                    scope.$on("mg.endMedia", function(event){
+                        if(player.singlePlay){
+
+                            return;
+                        }
                         player.currentIndex++;
                         var media = player.playlist[player.currentIndex];
-                        $rootScope.$broadcast("playNext", media);
+                        $rootScope.$broadcast("mg.playNext", media);
                     });
 
-                    scope.$on("Stop", function(event){
+                    scope.$on("mg.Stop", function(event){
                         player.currentIndex = 0;
                         player.currentPlayer = '';
                     })
