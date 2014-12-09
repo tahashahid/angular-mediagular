@@ -78,8 +78,21 @@
 
                     player.scAPI = attr.scapi;
                     player.playlist = [
+
+                        /*sample youtube obj
                         {
-                            src: "https://api.soundcloud.com/tracks/56542489/stream" + '?client_id=' + player.scAPI,
+                            src: "qUJYqhKZrwA",
+                            provider: "youtube"
+                        }*/
+                        /*
+                         sample soundcloudobj
+                         {
+                         src: "https://api.soundcloud.com/tracks/56542489/stream" + '?client_id=' + player.scAPI,
+                         provider: "soundcloud"
+                         }*/
+
+                        {
+                            src: "https://api.soundcloud.com/tracks/56542489/stream",
                             provider: "soundcloud"
                         },
                         {
@@ -93,7 +106,7 @@
                         },
 
                         {
-                            src: "https://api.soundcloud.com/tracks/163038821/stream" + '?client_id=' + player.scAPI,
+                            src: "https://api.soundcloud.com/tracks/163038821/stream",
                             provider: "soundcloud"
                         }
                     ];
@@ -161,7 +174,7 @@
 
                     player.playSoundCloud = function(src, autoplay){
                         $audioPlayer.attr("autoplay", autoplay || '');
-                        $audioPlayer.attr("src", src);
+                        $audioPlayer.attr("src", src + '?client_id=' + player.scAPI);
                         player.currentPlayer = "soundcloud";
 
                     };
